@@ -254,3 +254,93 @@ int writeOBJ(const VoxelGroup& group, const char* path)
     fclose(fp);
     return 0;
 }
+
+char* returnOBJ(const VoxelGroup& group)
+{
+    char* buf;
+
+    std::vector<int> vertexesOffset;
+    vertexesOffset.push_back(0);
+    int totalFaces = 0;
+
+    bool hasNormal = false;
+
+    for (VoxelGroup::const_iterator it = group.begin(); it != group.end(); it++) {
+        const std::vector<fvec3>& vertexes = it->second.vertexes;
+        const std::vector<Face>& faces = it->second.faces;
+        if (it->second.normals.size())
+            hasNormal = true;
+        for (unsigned int i = 0; i < vertexes.size(); i++) {
+            size_t sz;
+            sz = sprintf(NULL, "v %f %f %f\n", vertexes[i][0], vertexes[i][1], vertexes[i][2]);
+            if (sz != NULL) {
+                buf = (char*)malloc(sz + 1);
+                sprintf(buf, "v %f %f %f\n", vertexes[i][0], vertexes[i][1], vertexes[i][2]);
+            }
+        }
+
+        vertexesOffset.push_back(vertexes.size());
+        totalFaces += faces.size();
+    }
+
+    if (hasNormal) {
+        for (VoxelGroup::const_iterator it = group.begin(); it != group.end(); it++) {
+            const std::vector<fvec3>& normals = it->second.normals;
+            for (unsigned int i = 0; i < normals.size(); i++) {
+                size_t sz;
+                sz = sprintf(NULL, "vn %f %f %f\n", normals[i][0], normals[i][1], normals[i][2]);
+                if (sz != NULL) {
+                    buf = (char*)malloc(sz + 1);
+                    sprintf(buf, "vn %f %f %f\n", normals[i][0], normals[i][1], normals[i][2]);
+                }
+            }
+        }
+    }
+
+    int indexGroup = 0;
+    size_t sz;
+    sz = sprintf(NULL, "\n//Faces %d\n", totalFaces);
+    if (sz != NULL) {
+        buf = (char*)malloc(sz + 1);
+        sprintf(buf, "\n//Faces %d\n", totalFaces);
+    }
+    for (VoxelGroup::const_iterator it = group.begin(); it != group.end(); it++) {
+        int vertexOffset = vertexesOffset[indexGroup] + 1;
+
+        const std::vector<Face>& faces = it->second.faces;
+        size_t sz;
+        sz = sprintf(NULL, "g material_%d\n", indexGroup);
+        if (sz != NULL) {
+            buf = (char*)malloc(sz + 1);
+            sprintf(buf, "g material_%d\n", indexGroup);
+        }
+
+        if (hasNormal) {
+            for (unsigned int i = 0; i < faces.size(); i++) {
+                int v0 = vertexOffset + faces[i][0];
+                int v1 = vertexOffset + faces[i][1];
+                int v2 = vertexOffset + faces[i][2];
+                int v3 = vertexOffset + faces[i][3];
+                size_t sz;
+                sz = sprintf(NULL, "f %d//%d %d//%d %d//%d %d//%d\n", v0, v0, v1, v1, v2, v2, v3, v3);
+                if (sz != NULL) {
+                    buf = (char*)malloc(sz + 1);
+                    sprintf(buf, "f %d//%d %d//%d %d//%d %d//%d\n", v0, v0, v1, v1, v2, v2, v3, v3);
+                }
+            }
+        } else {
+            for (unsigned int i = 0; i < faces.size(); i++) {
+                size_t sz;
+                sz = sprintf(NULL, "f %d %d %d %d\n", vertexOffset + faces[i][0], vertexOffset + faces[i][1],
+                             vertexOffset + faces[i][2], vertexOffset + faces[i][3]);
+                if (sz != NULL) {
+                    buf = (char*)malloc(sz + 1);
+                    sprintf(buf, "f %d %d %d %d\n", vertexOffset + faces[i][0], vertexOffset + faces[i][1],
+                            vertexOffset + faces[i][2], vertexOffset + faces[i][3]);
+                }
+            }
+        }
+        indexGroup++;
+    }
+    return buf;
+}

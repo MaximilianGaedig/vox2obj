@@ -62,3 +62,4 @@ struct VoxScene;
 
 void polygonize(std::vector<VoxelGroup>& groups, const VoxScene& voxScene);
 int writeOBJ(const VoxelGroup& group, const char* path);
+char* returnOBJ(const VoxelGroup& group);
