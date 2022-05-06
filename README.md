@@ -1,13 +1,16 @@
-vox2mesh is a simple program to convert .vox file into obj file format. The support is still simple, more will probably come later. You can test vox models from https://github.com/ephtracy/voxel-model/
+# vox2obj
 
-# Usages
-```
-vox2obj input.vox output.obj
+vox2obj is a simple program to convert .vox file into obj file format.
+
+## Usage
+
+```ts
+import vox2obj from 'vox2obj';
+import { readFileSync,writeFileSync } from 'fs';
+
+writeFileSync('out.obj', vox2obj(readFileSync('in.vox')));
 ```
 
-# Build instructions
-```
-mkdir build; cd build;
-cmake ../
-make
-```
+## Credits
+
+Thanks to @cedricpinson for the Initial project, I only made it into a node native module
