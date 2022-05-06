@@ -1,0 +1,15 @@
+{
+  "name": "vox2obj",
+  "version": "1.0.0",
+  "description": "vox2obj",
+  "main": "index.ts",
+  "private": true,
+  "gypfile": true,
+  "devDependencies": {
+    "@types/node": "17.0.31",
+    "typescript": "4.6.4"
+  },
+  "dependencies": {
+    "node-addon-api": "5.0.0"
+  }
+}

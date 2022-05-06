@@ -1,77 +1,35 @@
-#include <getopt.h>
-
 #include "VoxReader.h"
 #include "polygonize.h"
+#include <napi.h>
 
-void printUsage()
+static Napi::Value vox2obj(const Napi::CallbackInfo& info)
 {
-    const char* text = "vox2obj is a tool to convert vox to obj\n"
-                       "usages:\n"
-                       " vox2obj input.vox output.obj\n"
-                       "\n";
-
-    printf("%s", text);
-}
-
-struct Options {
-    const char* inputFile = 0;
-    const char* outputFile = "output.obj";
-    int cleanFaces = 1;
-};
-
-int parseArgument(Options&, int argc, char** argv)
-{
-    int opt;
-    int optionIndex = 0;
-
-    static const char* OPTSTR = "h";
-    static const struct option OPTIONS[] = {
-        {"help", no_argument, nullptr, 'h'}, {nullptr, 0, 0, 0} // termination of the option list
-    };
-
-    while ((opt = getopt_long(argc, argv, OPTSTR, OPTIONS, &optionIndex)) >= 0) {
-        // const char *arg = optarg ? optarg : "";
-        if (opt == -1)
-            break;
-
-        switch (opt) {
-        default:
-        case 'h':
-            printUsage();
-            exit(0);
-            break;
-        }
+    Napi::Env env = info.Env();
+    if (info.Length() != 1) {
+        Napi::Error::New(info.Env(), "Expected exactly one argument").ThrowAsJavaScriptException();
+        return env.Undefined();
     }
-    return optind;
-}
-
-int main(int argc, char** argv)
-{
-
-    Options options;
-    int optionIndex = parseArgument(options, argc, argv);
-    int numArgs = argc - optionIndex;
-
-    if (numArgs < 1) {
-        printUsage();
-        return 1;
+    if (!info[0].IsArrayBuffer()) {
+        Napi::Error::New(info.Env(), "Expected an ArrayBuffer").ThrowAsJavaScriptException();
+        return env.Undefined();
     }
 
-    options.inputFile = argv[optionIndex];
-    if (numArgs > 1) {
-        options.outputFile = argv[optionIndex + 1];
-    }
+    Napi::ArrayBuffer buf = info[0].As<Napi::ArrayBuffer>();
 
     VoxReader reader;
-    if (!reader.readFile(options.inputFile)) {
-        printf("error reading voxels\n");
-        return 1;
-    }
+    reader.loadVoxelsData(reinterpret_cast<uint8_t*>(buf.Data()), buf.ByteLength() / sizeof(int8_t));
 
     std::vector<VoxelGroup> meshList;
 
     polygonize(meshList, reader.getVoxelScene());
-
-    // write an obj
-    return writeOBJ(meshList[0], options.outputFile);
+    std::string obj(returnOBJ(meshList[0]));
+    return Napi::String::New(env, obj);
 }
+
+static Napi::Object Init(Napi::Env env, Napi::Object exports)
+{
+    exports["vox2obj"] = Napi::Function::New(env, vox2obj);
+    return exports;
+}
+
+NODE_API_MODULE(NODE_GYP_MODULE_NAME, Init)
