@@ -23,6 +23,7 @@ static Napi::Value vox2obj(const Napi::CallbackInfo& info)
     std::vector<VoxelGroup> meshList;
 
     polygonize(meshList, reader.getVoxelScene());
+    writeOBJ(meshList[0], "test.obj");
     std::string obj(returnOBJ(meshList[0]));
     return Napi::String::New(env, obj);
     return env.Undefined();
