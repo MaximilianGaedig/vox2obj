@@ -1,5 +1,6 @@
 #include "VoxReader.h"
 #include "polygonize.h"
+#include <iostream>
 #include <napi.h>
 
 static Napi::Value vox2obj(const Napi::CallbackInfo& info)
@@ -9,21 +10,22 @@ static Napi::Value vox2obj(const Napi::CallbackInfo& info)
         Napi::Error::New(info.Env(), "Expected exactly one argument").ThrowAsJavaScriptException();
         return env.Undefined();
     }
-    if (!info[0].IsArrayBuffer()) {
-        Napi::Error::New(info.Env(), "Expected an ArrayBuffer").ThrowAsJavaScriptException();
-        return env.Undefined();
-    }
+    // if (!info[0].IsArray()) {
+    //     Napi::Error::New(info.Env(), "Expected an Array").ThrowAsJavaScriptException();
+    //     return env.Undefined();
+    // }
 
-    Napi::ArrayBuffer buf = info[0].As<Napi::ArrayBuffer>();
-
+    Napi::Uint8Array buf = info[0].As<Napi::Uint8Array>(); // uint8_t*
     VoxReader reader;
-    reader.loadVoxelsData(reinterpret_cast<uint8_t*>(buf.Data()), buf.ByteLength() / sizeof(int8_t));
+    uint8_t* test = reinterpret_cast<uint8_t*>(buf.Data());
+    reader.loadVoxelsData(test, buf.ByteLength());
 
     std::vector<VoxelGroup> meshList;
 
     polygonize(meshList, reader.getVoxelScene());
     std::string obj(returnOBJ(meshList[0]));
     return Napi::String::New(env, obj);
+    return env.Undefined();
 }
 
 static Napi::Object Init(Napi::Env env, Napi::Object exports)
